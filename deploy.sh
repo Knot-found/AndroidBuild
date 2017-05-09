@@ -9,7 +9,7 @@ cd ../
 mkdir L
 mkdir M
 cd M
-repo init -u https://android.googlesource.com/platform/manifest -b android-6.0.0_r1
+repo init -u https://android.googlesource.com/platform/manifest -b android-6.0.1_r30
 repo sync -j4 > /dev/null
 cd ..
 
@@ -52,3 +52,31 @@ echo -n dgv1 | dd bs=1 seek=6447 conv=notrunc of=vendor/nvidia/grouper/proprieta
 
 #cool binary patch for GPS blob
 printf "malloc\0" | dd bs=1 seek=5246 conv=notrunc of=vendor/broadcom/grouper/proprietary/glgps
+
+cd ~/AndroidBuild/M/
+#get old device sources
+cp -Rvf ~/AndroidBuild/L/device/asus/grouper device/asus/grouper
+
+#apply source patch to Nfc package (sadly we must mess with platform code here)
+cd packages/apps/Nfc/
+git apply ../../../../packages-apps-Nfc.patch
+cd ../../..
+
+#apply source patch to vendor repo
+cd vendor
+git apply ../../vendor.patch
+cd ..
+
+#apply source patch to device repo
+cd device/asus/grouper
+git apply ~/AndroidBuild/patch/device-asus-grouper.patch
+cd ../../..
+
+#get kernel
+cd ..
+git clone https://android.googlesource.com/kernel/tegra.git
+cd tegra
+git checkout remotes/origin/android-tegra3-grouper-3.1-lollipop-mr1 -b l-mr1
+
+#apply kernel patch
+git apply ../patch/kernel.patch
